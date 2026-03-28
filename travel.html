@@ -269,30 +269,35 @@ svg#world {
   fill: #d8d0bc;
   stroke: rgba(46, 82, 48, 0.16);
   stroke-width: 0.7px;
+  vector-effect: non-scaling-stroke;
 }
 
 .land-vis {
   fill: #355a37;
   stroke: rgba(46, 82, 48, 0.32);
   stroke-width: 0.8px;
+  vector-effect: non-scaling-stroke;
 }
 
 .land-us {
   fill: #d4ccb8;
   stroke: rgba(46, 82, 48, 0.18);
   stroke-width: 0.7px;
+  vector-effect: non-scaling-stroke;
 }
 
 .st-vis {
   fill: #456f47;
   stroke: rgba(46, 82, 48, 0.32);
   stroke-width: 0.9px;
+  vector-effect: non-scaling-stroke;
 }
 
 .st-def {
   fill: #cec4ae;
   stroke: rgba(46, 82, 48, 0.12);
   stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
 }
 
 .graticule {
@@ -300,6 +305,7 @@ svg#world {
   stroke: rgba(46, 82, 48, 0.12);
   stroke-width: 0.7px;
   stroke-dasharray: 3 8;
+  vector-effect: non-scaling-stroke;
 }
 
 .scroll-note {
@@ -640,7 +646,7 @@ function hideTip() {
 }
 
 function updateMarkerScale(zoomLevel) {
-  const markerScale = Math.max(0.42, 1 / Math.sqrt(zoomLevel));
+  const markerScale = Math.max(0.5, 1.12 / Math.sqrt(zoomLevel));
   markerLayer.selectAll(".marker")
     .attr("data-marker-scale", markerScale)
     .attr("transform", function() {
@@ -728,7 +734,7 @@ Promise.all([
     const point = projection(city.ll);
     if (!point) return;
     const [cx, cy] = point;
-    const dragon = drawDragon(markers, cx, cy, 1.06, "rgba(157,42,42,0.9)");
+    const dragon = drawDragon(markers, cx, cy, 1.18, "rgba(157,42,42,0.9)");
 
     markers.append("rect")
       .attr("x", cx - 10)
@@ -751,7 +757,7 @@ Promise.all([
     const point = projection(place.ll);
     if (!point) return;
     const [cx, cy] = point;
-    const dragon = drawDragon(markers, cx, cy, 1.34, "rgba(157,42,42,1)");
+    const dragon = drawDragon(markers, cx, cy, 1.52, "rgba(157,42,42,1)");
 
     markers.append("rect")
       .attr("x", cx - 12)
