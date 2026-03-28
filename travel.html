@@ -15,6 +15,9 @@
   --bg: #0f180f;
   --surface: #162216;
   --surface-soft: rgba(16, 25, 16, 0.78);
+  --ocean: #163447;
+  --ocean-deep: #0d2431;
+  --ocean-light: #27526a;
   --ink: #f0ebe0;
   --mid: rgba(221, 212, 187, 0.78);
   --muted: rgba(221, 212, 187, 0.5);
@@ -32,6 +35,7 @@ body {
   font-family: 'Cormorant Garamond', Georgia, serif;
   background:
     radial-gradient(circle at 18% 16%, rgba(52, 90, 57, 0.18), transparent 28%),
+    radial-gradient(circle at 76% 28%, rgba(39, 82, 106, 0.14), transparent 26%),
     radial-gradient(circle at 78% 78%, rgba(201, 149, 42, 0.08), transparent 26%),
     linear-gradient(180deg, #132014 0%, #0d150d 100%);
   color: var(--ink);
@@ -97,8 +101,8 @@ body {
   min-height: calc(112vh - 64px);
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 38%, rgba(68, 102, 64, 0.2), transparent 34%),
-    linear-gradient(180deg, #162417 0%, #101911 100%);
+    radial-gradient(circle at 50% 38%, rgba(51, 92, 112, 0.22), transparent 34%),
+    linear-gradient(180deg, #173446 0%, #102634 38%, #121f17 100%);
 }
 
 .map-section::before {
@@ -106,8 +110,10 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(8, 12, 8, 0.26) 0%, transparent 18%, transparent 72%, rgba(8, 12, 8, 0.7) 100%),
-    radial-gradient(circle at center, transparent 54%, rgba(6, 8, 6, 0.22) 100%);
+    linear-gradient(180deg, rgba(8, 12, 8, 0.18) 0%, transparent 18%, transparent 72%, rgba(8, 12, 8, 0.68) 100%),
+    radial-gradient(circle at center, transparent 54%, rgba(6, 8, 6, 0.22) 100%),
+    repeating-linear-gradient(0deg, rgba(221, 212, 187, 0.018) 0, rgba(221, 212, 187, 0.018) 1px, transparent 1px, transparent 78px),
+    repeating-linear-gradient(90deg, rgba(221, 212, 187, 0.014) 0, rgba(221, 212, 187, 0.014) 1px, transparent 1px, transparent 94px);
   pointer-events: none;
   z-index: 1;
 }
@@ -118,6 +124,47 @@ svg#world {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.europe-inset {
+  position: absolute;
+  top: 88px;
+  right: clamp(20px, 4vw, 48px);
+  z-index: 12;
+  width: min(320px, 34vw);
+  background: linear-gradient(180deg, rgba(12, 27, 36, 0.88) 0%, rgba(12, 20, 15, 0.88) 100%);
+  border: 1px solid rgba(221, 212, 187, 0.14);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+}
+
+.europe-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(221, 212, 187, 0.08);
+}
+
+.europe-title {
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.europe-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.53rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(221, 212, 187, 0.44);
+}
+
+svg#europe-map {
+  width: 100%;
+  height: auto;
+  display: block;
+  aspect-ratio: 1.05 / 1;
 }
 
 .map-panel {
@@ -276,6 +323,35 @@ svg#world {
   stroke-width: 0.3px;
 }
 
+.graticule {
+  fill: none;
+  stroke: rgba(221, 212, 187, 0.08);
+  stroke-width: 0.45px;
+  stroke-dasharray: 2.5 4.5;
+}
+
+.inset-sea {
+  fill: rgba(21, 57, 76, 0.9);
+}
+
+.inset-frame {
+  fill: none;
+  stroke: rgba(221, 212, 187, 0.18);
+  stroke-width: 1;
+}
+
+.inset-land {
+  fill: #1a2b1c;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 0.4px;
+}
+
+.inset-land-vis {
+  fill: #335a35;
+  stroke: rgba(194, 221, 183, 0.24);
+  stroke-width: 0.5px;
+}
+
 #tip {
   position: fixed;
   pointer-events: none;
@@ -315,6 +391,10 @@ svg#world {
     min-height: calc(96vh - 64px);
   }
 
+  .europe-inset {
+    width: min(280px, 42vw);
+  }
+
   .map-panel {
     flex-direction: column;
     align-items: flex-start;
@@ -332,11 +412,20 @@ svg#world {
   }
 
   .map-section {
-    min-height: calc(88vh - 64px);
+    min-height: calc(100vh - 64px);
   }
 
   .map-panel {
     padding: 42px 24px 30px;
+  }
+
+  .europe-inset {
+    position: absolute;
+    top: 78px;
+    left: 24px;
+    right: auto;
+    width: calc(100% - 48px);
+    max-width: 300px;
   }
 
   .panel-text h1 {
@@ -371,11 +460,26 @@ svg#world {
 <div class="page">
   <section class="map-section">
     <svg id="world" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" aria-label="World travel map">
-      <rect width="1200" height="760" fill="#132014"/>
+      <rect width="1200" height="760" fill="#173446"/>
+      <g id="graticule"></g>
       <g id="gc"></g>
       <g id="gs"></g>
       <g id="gm"></g>
     </svg>
+
+    <div class="europe-inset" aria-label="Europe detail">
+      <div class="europe-head">
+        <p class="europe-title">Europe Detail</p>
+        <p class="europe-meta">Closer Read</p>
+      </div>
+      <svg id="europe-map" viewBox="0 0 320 300" preserveAspectRatio="xMidYMid meet">
+        <rect class="inset-sea" width="320" height="300"></rect>
+        <g id="europe-graticule"></g>
+        <g id="europe-countries"></g>
+        <g id="europe-markers"></g>
+        <rect class="inset-frame" x="0.5" y="0.5" width="319" height="299"></rect>
+      </svg>
+    </div>
 
     <div class="map-panel">
       <div class="panel-text">
@@ -384,7 +488,8 @@ svg#world {
         <p>
           Mapmakers once drew dragons at the edges of the known world. Each marker here
           names a place that was unknown to me until I went there: 25 countries, 19 US
-          states, across six continents.
+          states, across six continents. The ocean goes blue here, but the land still keeps
+          the same forested tone as the rest of the site.
         </p>
       </div>
       <div class="panel-legend">
@@ -547,9 +652,31 @@ const tipCtry = document.getElementById("tip-country");
 const svg = d3.select("#world");
 const projection = d3.geoNaturalEarth1();
 const geoPath = d3.geoPath(projection);
+const europeSvg = d3.select("#europe-map");
+const europeProjection = d3.geoMercator();
+const europePath = d3.geoPath(europeProjection);
+const graticule = d3.geoGraticule10();
+const europeBounds = { west: -12, south: 35, east: 32, north: 58 };
 
 function fitProjection(featureCollection) {
   projection.fitExtent([[18, 24], [1182, 642]], featureCollection);
+}
+
+function fitEuropeProjection() {
+  const boundsFeature = {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [europeBounds.west, europeBounds.south],
+        [europeBounds.east, europeBounds.south],
+        [europeBounds.east, europeBounds.north],
+        [europeBounds.west, europeBounds.north],
+        [europeBounds.west, europeBounds.south]
+      ]]
+    }
+  };
+  europeProjection.fitExtent([[16, 16], [304, 284]], boundsFeature);
 }
 
 function showTip(event, name, country) {
@@ -605,6 +732,13 @@ Promise.all([
   const countries = topojson.feature(world, world.objects.countries);
   const states = topojson.feature(us, us.objects.states);
   fitProjection(countries);
+  fitEuropeProjection();
+
+  svg.select("#graticule")
+    .append("path")
+    .datum(graticule)
+    .attr("class", "graticule")
+    .attr("d", geoPath);
 
   svg.select("#gc").selectAll("path")
     .data(countries.features)
@@ -630,6 +764,25 @@ Promise.all([
     .on("mouseleave", hideTip);
 
   const markers = svg.select("#gm");
+  const europeCountries = countries.features.filter((datum) => {
+    const [west, south, east, north] = d3.geoBounds(datum).flat();
+    return east >= europeBounds.west && west <= europeBounds.east && north >= europeBounds.south && south <= europeBounds.north;
+  });
+
+  europeSvg.select("#europe-graticule")
+    .append("path")
+    .datum(d3.geoGraticule().extent([[europeBounds.west, europeBounds.south], [europeBounds.east, europeBounds.north]])())
+    .attr("class", "graticule")
+    .attr("d", europePath);
+
+  europeSvg.select("#europe-countries").selectAll("path")
+    .data(europeCountries)
+    .join("path")
+    .attr("d", europePath)
+    .attr("class", (datum) => {
+      const iso = ISO[String(datum.id).padStart(3, "0")];
+      return iso && VIS.has(iso) ? "inset-land-vis" : "inset-land";
+    });
 
   CITIES.forEach((city) => {
     const point = projection(city.ll);
@@ -652,6 +805,24 @@ Promise.all([
       .on("mousemove", (event) => showTip(event, city.n, city.c))
       .on("mousemove.mv", moveTip)
       .on("mouseleave", hideTip);
+
+    const isInEurope =
+      city.ll[0] >= europeBounds.west &&
+      city.ll[0] <= europeBounds.east &&
+      city.ll[1] >= europeBounds.south &&
+      city.ll[1] <= europeBounds.north;
+
+    if (isInEurope) {
+      const europePoint = europeProjection(city.ll);
+      if (europePoint) {
+        const [ex, ey] = europePoint;
+        const europeDragon = drawDragon(europeSvg.select("#europe-markers"), ex, ey, 1.08, "rgba(221,212,187,0.84)");
+        europeDragon
+          .on("mousemove", (event) => showTip(event, city.n, city.c))
+          .on("mousemove.mv", moveTip)
+          .on("mouseleave", hideTip);
+      }
+    }
   });
 
   SPECIAL.forEach((place) => {
