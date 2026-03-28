@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow, noarchive"/>
+<title>Travel — Mohid Khan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<style>
+:root {
+  --bg: #0f180f;
+  --surface: #162216;
+  --surface-soft: rgba(16, 25, 16, 0.78);
+  --ink: #f0ebe0;
+  --mid: rgba(221, 212, 187, 0.78);
+  --muted: rgba(221, 212, 187, 0.5);
+  --forest: #1c2d1d;
+  --leaf: #2f5231;
+  --leaf-bright: #3c6a3f;
+  --line: rgba(92, 122, 91, 0.22);
+  --sand: #ddd4bb;
+  --accent: #c9952a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  background:
+    radial-gradient(circle at 18% 16%, rgba(52, 90, 57, 0.18), transparent 28%),
+    radial-gradient(circle at 78% 78%, rgba(201, 149, 42, 0.08), transparent 26%),
+    linear-gradient(180deg, #132014 0%, #0d150d 100%);
+  color: var(--ink);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5vw;
+  background: rgba(14, 21, 14, 0.72);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav-logo {
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: clamp(1.2rem, 2.2vw, 2.4rem);
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover,
+.footer-nav a:hover {
+  color: var(--sand);
+}
+
+.page {
+  padding-top: 64px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-section {
+  position: relative;
+  flex: 1;
+  min-height: calc(112vh - 64px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(68, 102, 64, 0.2), transparent 34%),
+    linear-gradient(180deg, #162417 0%, #101911 100%);
+}
+
+.map-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 12, 8, 0.26) 0%, transparent 18%, transparent 72%, rgba(8, 12, 8, 0.7) 100%),
+    radial-gradient(circle at center, transparent 54%, rgba(6, 8, 6, 0.22) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+svg#world {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 68px clamp(24px, 5vw, 64px) 44px;
+  background: linear-gradient(to top, rgba(8, 12, 8, 0.88) 0%, rgba(8, 12, 8, 0.56) 42%, transparent 100%);
+  pointer-events: none;
+}
+
+.panel-text {
+  max-width: 520px;
+}
+
+.panel-kicker,
+.leg,
+.footer-sub,
+.footer-nav a,
+.footer-copy {
+  font-family: 'DM Mono', monospace;
+}
+
+.panel-kicker {
+  font-size: 0.58rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(221, 212, 187, 0.46);
+  margin-bottom: 1rem;
+}
+
+.panel-text h1 {
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.1rem;
+  color: var(--ink);
+  text-shadow: 0 2px 22px rgba(0, 0, 0, 0.5);
+}
+
+.panel-text p {
+  font-size: clamp(1rem, 1.5vw, 1.16rem);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.8;
+  color: var(--mid);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+}
+
+.panel-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+  align-items: flex-end;
+}
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(221, 212, 187, 0.48);
+  white-space: nowrap;
+}
+
+.leg-swatch {
+  width: 22px;
+  height: 8px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.footer {
+  padding: 4vh 5vw 5vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.8rem;
+  border-top: 1px solid var(--line);
+  background: rgba(8, 12, 8, 0.88);
+}
+
+.footer-name {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.footer-sub {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.footer-nav {
+  display: flex;
+  gap: 1.8rem;
+}
+
+.footer-nav a {
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(221, 212, 187, 0.7);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-copy {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  color: rgba(221, 212, 187, 0.34);
+}
+
+.land {
+  fill: #1a251a;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.45px;
+}
+
+.land-vis {
+  fill: #29402a;
+  stroke: rgba(133, 170, 127, 0.24);
+  stroke-width: 0.55px;
+}
+
+.land-us {
+  fill: #132013;
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 0.45px;
+}
+
+.st-vis {
+  fill: #3c6a3f;
+  stroke: rgba(194, 221, 183, 0.26);
+  stroke-width: 0.55px;
+}
+
+.st-def {
+  fill: #1a2a1a;
+  stroke: rgba(92, 122, 91, 0.18);
+  stroke-width: 0.3px;
+}
+
+#tip {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 300;
+}
+
+#tip.on { opacity: 1; }
+
+#tip-inner {
+  background: rgba(240, 235, 224, 0.96);
+  border: 1px solid rgba(47, 82, 49, 0.16);
+  padding: 8px 14px;
+  backdrop-filter: blur(8px);
+}
+
+#tip-name {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #182018;
+  white-space: nowrap;
+}
+
+#tip-country {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5d6757;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .map-section {
+    min-height: calc(96vh - 64px);
+  }
+
+  .map-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+
+  .panel-legend {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .nav-links {
+    display: none;
+  }
+
+  .map-section {
+    min-height: calc(88vh - 64px);
+  }
+
+  .map-panel {
+    padding: 42px 24px 30px;
+  }
+
+  .panel-text h1 {
+    font-size: clamp(2.2rem, 10vw, 3.3rem);
+  }
+
+  .panel-text p {
+    font-size: 1rem;
+    line-height: 1.72;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 4vh 24px 5vh;
+  }
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="https://mohid169.github.io/" class="nav-logo">Mohid Khan</a>
+  <ul class="nav-links">
+    <li><a href="https://mohid169.github.io/#about">About</a></li>
+    <li><a href="https://mohid169.github.io/#experience">Experience</a></li>
+    <li><a href="https://mohid169.github.io/#research">Research</a></li>
+    <li><a href="https://mohid169.github.io/#publications">Publications</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+  <section class="map-section">
+    <svg id="world" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" aria-label="World travel map">
+      <rect width="1200" height="760" fill="#132014"/>
+      <g id="gc"></g>
+      <g id="gs"></g>
+      <g id="gm"></g>
+    </svg>
+
+    <div class="map-panel">
+      <div class="panel-text">
+        <p class="panel-kicker">Private Page</p>
+        <h1>Travel</h1>
+        <p>
+          Mapmakers once drew dragons at the edges of the known world. Each marker here
+          names a place that was unknown to me until I went there: 25 countries, 19 US
+          states, across six continents.
+        </p>
+      </div>
+      <div class="panel-legend">
+        <div class="leg">
+          <div class="leg-swatch" style="background:#29402a;border:1px solid rgba(133,170,127,0.24);"></div>
+          Country visited
+        </div>
+        <div class="leg">
+          <div class="leg-swatch" style="background:#3c6a3f;border:1px solid rgba(194,221,183,0.26);"></div>
+          US state visited
+        </div>
+        <div class="leg">
+          <svg width="14" height="14" viewBox="-7 -7 14 11" style="flex-shrink:0;">
+            <path d="M-3,-3.2 C-5.5,-4.8 -6.2,-2.6 -4.8,-1 C-3.8,-0.1 -3,-1.2 -3,-2Z" fill="rgba(221,212,187,0.78)" opacity="0.7"/>
+            <path d="M3,-3.2 C5.5,-4.8 6.2,-2.6 4.8,-1 C3.8,-0.1 3,-1.2 3,-2Z" fill="rgba(221,212,187,0.78)" opacity="0.7"/>
+            <path d="M0,-6 C-0.4,-4.8 -2.8,-3.8 -2.8,-1.8 C-2.8,0.2 -1.2,1.2 0,1.6 C1.2,1.2 2.8,0.2 2.8,-1.8 C2.8,-3.8 0.4,-4.8 0,-6Z" fill="rgba(221,212,187,0.78)"/>
+          </svg>
+          Place visited
+        </div>
+        <div class="leg">
+          <svg width="14" height="14" viewBox="-7 -7 14 11" style="flex-shrink:0;">
+            <path d="M-3,-3.2 C-5.5,-4.8 -6.2,-2.6 -4.8,-1 C-3.8,-0.1 -3,-1.2 -3,-2Z" fill="#ddd4bb" opacity="0.7"/>
+            <path d="M3,-3.2 C5.5,-4.8 6.2,-2.6 4.8,-1 C3.8,-0.1 3,-1.2 3,-2Z" fill="#ddd4bb" opacity="0.7"/>
+            <path d="M0,-6 C-0.4,-4.8 -2.8,-3.8 -2.8,-1.8 C-2.8,0.2 -1.2,1.2 0,1.6 C1.2,1.2 2.8,0.2 2.8,-1.8 C2.8,-3.8 0.4,-4.8 0,-6Z" fill="#ddd4bb"/>
+          </svg>
+          SF home · Philadelphia hometown
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>
+      <p class="footer-name">Mohid A. Khan</p>
+      <p class="footer-sub">Roboticist · San Francisco</p>
+    </div>
+    <nav class="footer-nav">
+      <a href="https://www.linkedin.com/in/mohid-khan-743835103/" target="_blank" rel="noreferrer">LinkedIn</a>
+      <a href="https://github.com/Mohid169" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <span class="footer-copy">© 2025 Mohid A. Khan</span>
+  </footer>
+</div>
+
+<div id="tip">
+  <div id="tip-inner">
+    <div id="tip-name"></div>
+    <div id="tip-country"></div>
+  </div>
+</div>
+
+<script>
+const CITIES = [
+  { n: "Lahore", c: "Pakistan", ll: [74.3587, 31.5204] },
+  { n: "Karachi", c: "Pakistan", ll: [67.0099, 24.8607] },
+  { n: "Peshawar", c: "Pakistan", ll: [71.5249, 34.015] },
+  { n: "Mecca", c: "Saudi Arabia", ll: [39.8579, 21.3891] },
+  { n: "Medina", c: "Saudi Arabia", ll: [39.6142, 24.5247] },
+  { n: "Dubai", c: "UAE", ll: [55.2708, 25.2048] },
+  { n: "Doha", c: "Qatar", ll: [51.531, 25.2854] },
+  { n: "Kunming", c: "China", ll: [102.7123, 25.0389] },
+  { n: "Beijing", c: "China", ll: [116.4074, 39.9042] },
+  { n: "Jiankou Great Wall", c: "China", ll: [116.5255, 40.4555] },
+  { n: "Lijiang", c: "China", ll: [100.233, 26.8721] },
+  { n: "Tiger Leaping Gorge", c: "China", ll: [99.9833, 27.15] },
+  { n: "Marrakech", c: "Morocco", ll: [-7.9811, 31.6295] },
+  { n: "Amalfi", c: "Italy", ll: [14.6027, 40.634] },
+  { n: "Pompeii", c: "Italy", ll: [14.4989, 40.7462] },
+  { n: "Toronto", c: "Canada", ll: [-79.3832, 43.6532] },
+  { n: "Istanbul", c: "Turkey", ll: [28.9784, 41.0082] },
+  { n: "Gocek", c: "Turkey", ll: [28.9333, 36.75] },
+  { n: "Antalya", c: "Turkey", ll: [30.7133, 36.8969] },
+  { n: "Athens", c: "Greece", ll: [23.7275, 37.9838] },
+  { n: "Bonn", c: "Germany", ll: [7.0982, 50.7374] },
+  { n: "Cologne", c: "Germany", ll: [6.9603, 50.9333] },
+  { n: "Venlo", c: "Netherlands", ll: [6.1724, 51.3703] },
+  { n: "Gouda", c: "Netherlands", ll: [4.7111, 52.0116] },
+  { n: "Amsterdam", c: "Netherlands", ll: [4.9041, 52.3676] },
+  { n: "London", c: "UK", ll: [-0.1276, 51.5074] },
+  { n: "Manchester", c: "UK", ll: [-2.2426, 53.4808] },
+  { n: "Birmingham", c: "UK", ll: [-1.8904, 52.4862] },
+  { n: "Nuneaton", c: "UK", ll: [-1.4674, 52.5228] },
+  { n: "Leicester", c: "UK", ll: [-1.1398, 52.6369] },
+  { n: "Coventry", c: "UK", ll: [-1.5197, 52.4068] },
+  { n: "Llanberis", c: "Wales", ll: [-4.1278, 53.1186] },
+  { n: "Lucerne", c: "Switzerland", ll: [8.3093, 47.0502] },
+  { n: "Zurich", c: "Switzerland", ll: [8.5417, 47.3769] },
+  { n: "Geneva", c: "Switzerland", ll: [6.1432, 46.2044] },
+  { n: "Nyon", c: "Switzerland", ll: [6.234, 46.3833] },
+  { n: "Nassau", c: "Bahamas", ll: [-77.3504, 25.048] },
+  { n: "Kingston", c: "Jamaica", ll: [-76.7936, 17.997] },
+  { n: "San Juan", c: "Puerto Rico", ll: [-66.1057, 18.4655] },
+  { n: "Cancun", c: "Mexico", ll: [-86.8515, 21.1619] },
+  { n: "Puerto Vallarta", c: "Mexico", ll: [-105.2253, 20.6534] },
+  { n: "Paris", c: "France", ll: [2.3522, 48.8566] },
+  { n: "Cupecoy", c: "Sint Maarten", ll: [-63.12, 18.045] },
+  { n: "Langkawi", c: "Malaysia", ll: [99.7981, 6.35] }
+];
+
+const SPECIAL = [
+  { n: "San Francisco", c: "Home", ll: [-122.4194, 37.7749] },
+  { n: "Philadelphia", c: "Hometown", ll: [-75.1652, 39.9526] }
+];
+
+const SNAMES = {
+  "11": "Washington D.C.",
+  "24": "Maryland",
+  "51": "Virginia",
+  "10": "Delaware",
+  "42": "Pennsylvania",
+  "34": "New Jersey",
+  "36": "New York",
+  "09": "Connecticut",
+  "44": "Rhode Island",
+  "25": "Massachusetts",
+  "33": "New Hampshire",
+  "12": "Florida",
+  "13": "Georgia",
+  "48": "Texas",
+  "06": "California",
+  "17": "Illinois",
+  "26": "Michigan",
+  "21": "Kentucky",
+  "15": "Hawaii"
+};
+
+const ISO = {
+  "586": "PAK",
+  "682": "SAU",
+  "784": "ARE",
+  "634": "QAT",
+  "156": "CHN",
+  "504": "MAR",
+  "380": "ITA",
+  "124": "CAN",
+  "792": "TUR",
+  "300": "GRC",
+  "276": "DEU",
+  "528": "NLD",
+  "826": "GBR",
+  "756": "CHE",
+  "044": "BHS",
+  "388": "JAM",
+  "630": "PRI",
+  "484": "MEX",
+  "250": "FRA",
+  "663": "MAF",
+  "458": "MYS",
+  "840": "USA"
+};
+
+const VIS = new Set([
+  "PAK", "SAU", "ARE", "QAT", "CHN", "MAR", "ITA", "CAN", "TUR", "GRC",
+  "DEU", "NLD", "GBR", "CHE", "BHS", "JAM", "PRI", "MEX", "FRA", "MAF", "MYS"
+]);
+
+const tip = document.getElementById("tip");
+const tipName = document.getElementById("tip-name");
+const tipCtry = document.getElementById("tip-country");
+const svg = d3.select("#world");
+const projection = d3.geoNaturalEarth1();
+const geoPath = d3.geoPath(projection);
+
+function fitProjection(featureCollection) {
+  projection.fitExtent([[18, 24], [1182, 642]], featureCollection);
+}
+
+function showTip(event, name, country) {
+  tipName.textContent = name;
+  tipCtry.textContent = country;
+  tip.classList.add("on");
+  moveTip(event);
+}
+
+function moveTip(event) {
+  tip.style.left = `${event.clientX + 14}px`;
+  tip.style.top = `${event.clientY - 46}px`;
+}
+
+function hideTip() {
+  tip.classList.remove("on");
+}
+
+function drawDragon(parent, cx, cy, scale, fill, opacity = 1) {
+  const group = parent.append("g")
+    .attr("transform", `translate(${cx},${cy}) scale(${scale})`)
+    .attr("fill", fill)
+    .attr("opacity", opacity)
+    .style("cursor", "pointer");
+
+  group.append("path")
+    .attr("d", "M-3,-3.2 C-5.5,-4.8 -6.2,-2.6 -4.8,-1 C-3.8,-0.1 -3,-1.2 -3,-2Z")
+    .attr("opacity", 0.7);
+  group.append("path")
+    .attr("d", "M3,-3.2 C5.5,-4.8 6.2,-2.6 4.8,-1 C3.8,-0.1 3,-1.2 3,-2Z")
+    .attr("opacity", 0.7);
+  group.append("path")
+    .attr("d", "M0,-6 C-0.4,-4.8 -2.8,-3.8 -2.8,-1.8 C-2.8,0.2 -1.2,1.2 0,1.6 C1.2,1.2 2.8,0.2 2.8,-1.8 C2.8,-3.8 0.4,-4.8 0,-6Z");
+  group.append("line")
+    .attr("x1", -0.8).attr("y1", -5.2).attr("x2", -1.6).attr("y2", -7)
+    .attr("stroke", fill).attr("stroke-width", 0.7).attr("stroke-linecap", "round").attr("fill", "none");
+  group.append("line")
+    .attr("x1", 0.8).attr("y1", -5.2).attr("x2", 1.6).attr("y2", -7)
+    .attr("stroke", fill).attr("stroke-width", 0.7).attr("stroke-linecap", "round").attr("fill", "none");
+  group.append("circle").attr("cx", -1).attr("cy", -2).attr("r", 0.65).attr("fill", "#c9952a");
+  group.append("circle").attr("cx", 1).attr("cy", -2).attr("r", 0.65).attr("fill", "#c9952a");
+  group.append("path")
+    .attr("d", "M0,1.6 C-0.6,2.8 -1.2,3 -0.6,3.6")
+    .attr("fill", "none").attr("stroke", fill).attr("stroke-width", 0.7).attr("stroke-linecap", "round");
+
+  return group;
+}
+
+Promise.all([
+  fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then((response) => response.json()),
+  fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json").then((response) => response.json())
+]).then(([world, us]) => {
+  const countries = topojson.feature(world, world.objects.countries);
+  const states = topojson.feature(us, us.objects.states);
+  fitProjection(countries);
+
+  svg.select("#gc").selectAll("path")
+    .data(countries.features)
+    .join("path")
+    .attr("d", geoPath)
+    .attr("class", (datum) => {
+      const iso = ISO[String(datum.id).padStart(3, "0")];
+      if (iso === "USA") return "land-us";
+      if (iso && VIS.has(iso)) return "land-vis";
+      return "land";
+    });
+
+  svg.select("#gs").selectAll("path")
+    .data(states.features)
+    .join("path")
+    .attr("d", geoPath)
+    .attr("class", (datum) => SNAMES[String(datum.id).padStart(2, "0")] ? "st-vis" : "st-def")
+    .on("mousemove", function(event, datum) {
+      const name = SNAMES[String(datum.id).padStart(2, "0")];
+      if (name) showTip(event, name, "United States");
+    })
+    .on("mousemove.mv", moveTip)
+    .on("mouseleave", hideTip);
+
+  const markers = svg.select("#gm");
+
+  CITIES.forEach((city) => {
+    const point = projection(city.ll);
+    if (!point) return;
+    const [cx, cy] = point;
+    const dragon = drawDragon(markers, cx, cy, 0.88, "rgba(221,212,187,0.8)");
+
+    markers.append("rect")
+      .attr("x", cx - 8)
+      .attr("y", cy - 10)
+      .attr("width", 16)
+      .attr("height", 14)
+      .attr("fill", "transparent")
+      .style("cursor", "pointer")
+      .on("mousemove", (event) => showTip(event, city.n, city.c))
+      .on("mousemove.mv", moveTip)
+      .on("mouseleave", hideTip);
+
+    dragon
+      .on("mousemove", (event) => showTip(event, city.n, city.c))
+      .on("mousemove.mv", moveTip)
+      .on("mouseleave", hideTip);
+  });
+
+  SPECIAL.forEach((place) => {
+    const point = projection(place.ll);
+    if (!point) return;
+    const [cx, cy] = point;
+    const dragon = drawDragon(markers, cx, cy, 1.18, "#ddd4bb");
+
+    markers.append("rect")
+      .attr("x", cx - 10)
+      .attr("y", cy - 13)
+      .attr("width", 20)
+      .attr("height", 18)
+      .attr("fill", "transparent")
+      .style("cursor", "pointer")
+      .on("mousemove", (event) => showTip(event, place.n, place.c))
+      .on("mousemove.mv", moveTip)
+      .on("mouseleave", hideTip);
+
+    dragon
+      .on("mousemove", (event) => showTip(event, place.n, place.c))
+      .on("mousemove.mv", moveTip)
+      .on("mouseleave", hideTip);
+  });
+});
+</script>
+</body>
+</html>
