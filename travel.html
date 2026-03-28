@@ -15,12 +15,15 @@
   --bg: #f7f3ec;
   --surface: #f0ebe0;
   --surface-soft: rgba(240, 235, 224, 0.84);
+  --ocean: #dfe8ea;
+  --ocean-deep: #c8d8dc;
   --ink: #1a1c18;
   --mid: #4e5249;
   --muted: rgba(78, 82, 73, 0.62);
   --forest: #1e3320;
   --leaf: #2e5230;
   --leaf-bright: #456f47;
+  --crimson: #9d2a2a;
   --line: rgba(46, 82, 48, 0.14);
   --sand: #ddd4bb;
   --accent: #c9952a;
@@ -118,7 +121,7 @@ body {
   z-index: 2;
   overflow: auto;
   background:
-    linear-gradient(180deg, rgba(240, 235, 224, 0.92) 0%, rgba(231, 223, 207, 0.96) 100%);
+    linear-gradient(180deg, rgba(223, 232, 234, 0.94) 0%, rgba(200, 216, 220, 0.96) 100%);
   border: 1px solid rgba(46, 82, 48, 0.16);
   box-shadow:
     0 30px 80px rgba(31, 38, 27, 0.14),
@@ -143,14 +146,14 @@ body {
 }
 
 .map-inner {
-  width: 1900px;
-  height: 1120px;
+  width: 2800px;
+  height: 1650px;
   position: relative;
 }
 
 svg#world {
-  width: 1900px;
-  height: 1120px;
+  width: 2800px;
+  height: 1650px;
   display: block;
 }
 
@@ -397,8 +400,8 @@ svg#world {
 
   .map-inner,
   svg#world {
-    width: 1700px;
-    height: 1040px;
+    width: 2400px;
+    height: 1440px;
   }
 
   .map-panel {
@@ -439,8 +442,8 @@ svg#world {
     <div class="scroll-note">Scroll To Roam</div>
     <div class="map-shell" id="map-shell" aria-label="Scrollable world travel map">
       <div class="map-inner">
-        <svg id="world" viewBox="0 0 1900 1120" preserveAspectRatio="xMidYMid meet" aria-label="World travel map">
-          <rect width="1900" height="1120" fill="#ebe4d5"/>
+        <svg id="world" viewBox="0 0 2800 1650" preserveAspectRatio="xMidYMid meet" aria-label="World travel map">
+          <rect width="2800" height="1650" fill="#dfe8ea"/>
           <g id="graticule"></g>
           <g id="gc"></g>
           <g id="gs"></g>
@@ -624,7 +627,7 @@ const geoPath = d3.geoPath(projection);
 const graticule = d3.geoGraticule10();
 
 function fitProjection(featureCollection) {
-  projection.fitExtent([[70, 90], [1830, 940]], featureCollection);
+  projection.fitExtent([[120, 140], [2680, 1400]], featureCollection);
 }
 
 function showTip(event, name, country) {
@@ -716,13 +719,13 @@ Promise.all([
     const point = projection(city.ll);
     if (!point) return;
     const [cx, cy] = point;
-    const dragon = drawDragon(markers, cx, cy, 0.88, "rgba(221,212,187,0.8)");
+    const dragon = drawDragon(markers, cx, cy, 1.06, "rgba(157,42,42,0.9)");
 
     markers.append("rect")
-      .attr("x", cx - 8)
-      .attr("y", cy - 10)
-      .attr("width", 16)
-      .attr("height", 14)
+      .attr("x", cx - 10)
+      .attr("y", cy - 12)
+      .attr("width", 20)
+      .attr("height", 18)
       .attr("fill", "transparent")
       .style("cursor", "pointer")
       .on("mousemove", (event) => showTip(event, city.n, city.c))
@@ -739,13 +742,13 @@ Promise.all([
     const point = projection(place.ll);
     if (!point) return;
     const [cx, cy] = point;
-    const dragon = drawDragon(markers, cx, cy, 1.18, "#ddd4bb");
+    const dragon = drawDragon(markers, cx, cy, 1.34, "rgba(157,42,42,1)");
 
     markers.append("rect")
-      .attr("x", cx - 10)
-      .attr("y", cy - 13)
-      .attr("width", 20)
-      .attr("height", 18)
+      .attr("x", cx - 12)
+      .attr("y", cy - 15)
+      .attr("width", 24)
+      .attr("height", 20)
       .attr("fill", "transparent")
       .style("cursor", "pointer")
       .on("mousemove", (event) => showTip(event, place.n, place.c))
@@ -759,8 +762,8 @@ Promise.all([
   });
 
   requestAnimationFrame(() => {
-    mapShell.scrollLeft = Math.max((mapShell.scrollWidth - mapShell.clientWidth) * 0.19, 0);
-    mapShell.scrollTop = Math.max((mapShell.scrollHeight - mapShell.clientHeight) * 0.1, 0);
+    mapShell.scrollLeft = Math.max((mapShell.scrollWidth - mapShell.clientWidth) * 0.34, 0);
+    mapShell.scrollTop = Math.max((mapShell.scrollHeight - mapShell.clientHeight) * 0.08, 0);
   });
 });
 </script>
