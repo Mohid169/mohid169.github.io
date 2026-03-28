@@ -119,41 +119,25 @@ body {
   top: 92px;
   bottom: 136px;
   z-index: 2;
-  overflow: auto;
+  overflow: hidden;
   background:
     linear-gradient(180deg, rgba(223, 232, 234, 0.94) 0%, rgba(200, 216, 220, 0.96) 100%);
   border: 1px solid rgba(46, 82, 48, 0.16);
   box-shadow:
     0 30px 80px rgba(31, 38, 27, 0.14),
     inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(46, 82, 48, 0.42) rgba(46, 82, 48, 0.08);
-}
-
-.map-shell::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-.map-shell::-webkit-scrollbar-track {
-  background: rgba(46, 82, 48, 0.08);
-}
-
-.map-shell::-webkit-scrollbar-thumb {
-  background: rgba(46, 82, 48, 0.34);
-  border-radius: 999px;
-  border: 2px solid rgba(240, 235, 224, 0.8);
+  cursor: grab;
 }
 
 .map-inner {
-  width: 2800px;
-  height: 1650px;
+  width: 100%;
+  height: 100%;
   position: relative;
 }
 
 svg#world {
-  width: 2800px;
-  height: 1650px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 
@@ -331,6 +315,11 @@ svg#world {
   background: rgba(247, 243, 236, 0.9);
   border: 1px solid rgba(46, 82, 48, 0.14);
   padding: 0.7rem 0.85rem;
+  pointer-events: none;
+}
+
+.map-shell.is-dragging {
+  cursor: grabbing;
 }
 
 #tip {
@@ -400,8 +389,8 @@ svg#world {
 
   .map-inner,
   svg#world {
-    width: 2400px;
-    height: 1440px;
+    width: 100%;
+    height: 100%;
   }
 
   .map-panel {
@@ -444,10 +433,12 @@ svg#world {
       <div class="map-inner">
         <svg id="world" viewBox="0 0 2800 1650" preserveAspectRatio="xMidYMid meet" aria-label="World travel map">
           <rect width="2800" height="1650" fill="#dfe8ea"/>
-          <g id="graticule"></g>
-          <g id="gc"></g>
-          <g id="gs"></g>
-          <g id="gm"></g>
+          <g id="viewport">
+            <g id="graticule"></g>
+            <g id="gc"></g>
+            <g id="gs"></g>
+            <g id="gm"></g>
+          </g>
         </svg>
       </div>
     </div>
@@ -459,8 +450,8 @@ svg#world {
         <p>
           Mapmakers once drew dragons at the edges of the known world. Each marker here
           names a place that was unknown to me until I went there: 25 countries, 19 US
-          states, across six continents. The map is intentionally oversized so dense corridors
-          like Europe can be read by moving through it instead of collapsing into one knot.
+          states, across six continents. Drag to pan and scroll to zoom. Dense corridors
+          like Europe need interaction, not a hacked-in inset.
         </p>
       </div>
       <div class="panel-legend">
@@ -622,12 +613,14 @@ const tipName = document.getElementById("tip-name");
 const tipCtry = document.getElementById("tip-country");
 const mapShell = document.getElementById("map-shell");
 const svg = d3.select("#world");
+const viewport = svg.select("#viewport");
+const markerLayer = svg.select("#gm");
 const projection = d3.geoNaturalEarth1();
 const geoPath = d3.geoPath(projection);
 const graticule = d3.geoGraticule10();
 
 function fitProjection(featureCollection) {
-  projection.fitExtent([[120, 140], [2680, 1400]], featureCollection);
+  projection.fitExtent([[120, 140], [2680, 1380]], featureCollection);
 }
 
 function showTip(event, name, country) {
@@ -646,8 +639,24 @@ function hideTip() {
   tip.classList.remove("on");
 }
 
+function updateMarkerScale(zoomLevel) {
+  const markerScale = Math.max(0.42, 1 / Math.sqrt(zoomLevel));
+  markerLayer.selectAll(".marker")
+    .attr("data-marker-scale", markerScale)
+    .attr("transform", function() {
+      const cx = this.dataset.cx;
+      const cy = this.dataset.cy;
+      const base = this.dataset.baseScale;
+      return `translate(${cx},${cy}) scale(${base * markerScale})`;
+    });
+}
+
 function drawDragon(parent, cx, cy, scale, fill, opacity = 1) {
   const group = parent.append("g")
+    .attr("class", "marker")
+    .attr("data-cx", cx)
+    .attr("data-cy", cy)
+    .attr("data-base-scale", scale)
     .attr("transform", `translate(${cx},${cy}) scale(${scale})`)
     .attr("fill", fill)
     .attr("opacity", opacity)
@@ -761,10 +770,23 @@ Promise.all([
       .on("mouseleave", hideTip);
   });
 
-  requestAnimationFrame(() => {
-    mapShell.scrollLeft = Math.max((mapShell.scrollWidth - mapShell.clientWidth) * 0.34, 0);
-    mapShell.scrollTop = Math.max((mapShell.scrollHeight - mapShell.clientHeight) * 0.08, 0);
-  });
+  const zoom = d3.zoom()
+    .scaleExtent([1, 6])
+    .translateExtent([[-420, -320], [3220, 1970]])
+    .on("start", () => mapShell.classList.add("is-dragging"))
+    .on("zoom", (event) => {
+      viewport.attr("transform", event.transform);
+      updateMarkerScale(event.transform.k);
+    })
+    .on("end", () => mapShell.classList.remove("is-dragging"));
+
+  svg.call(zoom)
+    .call(
+      zoom.transform,
+      d3.zoomIdentity.translate(-160, -36).scale(1.16)
+    );
+
+  updateMarkerScale(1.16);
 });
 </script>
 </body>
