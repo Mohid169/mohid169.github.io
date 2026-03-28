@@ -308,6 +308,19 @@ svg#world {
   vector-effect: non-scaling-stroke;
 }
 
+.country-borders {
+  fill: none;
+  stroke: rgba(94, 110, 88, 0.42);
+  stroke-width: 0.7px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.country-borders.visited {
+  stroke: rgba(241, 235, 221, 0.55);
+  stroke-width: 0.95px;
+}
+
 .scroll-note {
   position: absolute;
   top: 26px;
@@ -442,6 +455,8 @@ svg#world {
           <g id="viewport">
             <g id="graticule"></g>
             <g id="gc"></g>
+            <g id="cb"></g>
+            <g id="cbv"></g>
             <g id="gs"></g>
             <g id="gm"></g>
           </g>
@@ -697,6 +712,21 @@ Promise.all([
 ]).then(([world, us]) => {
   const countries = topojson.feature(world, world.objects.countries);
   const states = topojson.feature(us, us.objects.states);
+  const allCountryBorders = topojson.mesh(
+    world,
+    world.objects.countries,
+    (a, b) => a !== b
+  );
+  const visitedCountryBorders = topojson.mesh(
+    world,
+    world.objects.countries,
+    (a, b) => {
+      if (!a || !b || a === b) return false;
+      const isoA = ISO[String(a.id).padStart(3, "0")];
+      const isoB = ISO[String(b.id).padStart(3, "0")];
+      return Boolean(isoA && isoB && VIS.has(isoA) && VIS.has(isoB));
+    }
+  );
   fitProjection(countries);
 
   svg.select("#graticule")
@@ -715,6 +745,18 @@ Promise.all([
       if (iso && VIS.has(iso)) return "land-vis";
       return "land";
     });
+
+  svg.select("#cb")
+    .append("path")
+    .datum(allCountryBorders)
+    .attr("class", "country-borders")
+    .attr("d", geoPath);
+
+  svg.select("#cbv")
+    .append("path")
+    .datum(visitedCountryBorders)
+    .attr("class", "country-borders visited")
+    .attr("d", geoPath);
 
   svg.select("#gs").selectAll("path")
     .data(states.features)
